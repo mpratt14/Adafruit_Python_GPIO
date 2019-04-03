@@ -31,7 +31,6 @@ import ftdi1 as ftdi
 
 import Adafruit_GPIO.GPIO as GPIO
 
-
 logger = logging.getLogger(__name__)
 
 FT232H_VID = 0x0403   # Default FTDI FT232H vendor ID
@@ -41,7 +40,6 @@ MSBFIRST = 0
 LSBFIRST = 1
 
 _REPEAT_DELAY = 4
-
 
 def _check_running_as_root():
     # NOTE: Checking for root with user ID 0 isn't very portable, perhaps
@@ -122,7 +120,6 @@ def enumerate_device_serials(vid=FT232H_VID, pid=FT232H_PID):
             ftdi.list_free(device_list)
         if ctx is not None:
             ftdi.free(ctx)
-
 
 class FT232H(GPIO.BaseGPIO):
     # Make GPIO constants that match main GPIO class for compatibility.
@@ -333,8 +330,9 @@ class FT232H(GPIO.BaseGPIO):
             self._direction &= ~(1 << pin) & 0xFFFF
             self._level     &= ~(1 << pin) & 0xFFFF
         else:
-            # Set the direction of the pin to 1.
+            # Set the direction and level of the pin to 1.
             self._direction |= (1 << pin) & 0xFFFF
+            self._level     |= (1 << pin) & 0xFFFF
 
     def setup(self, pin, mode):
         """Set the input or output mode for a specified pin.  Mode should be
@@ -392,14 +390,12 @@ class FT232H(GPIO.BaseGPIO):
         _pins = self.mpsse_read_gpio()
         return [((_pins >> pin) & 0x0001) == 1 for pin in pins]
 
-
 class SPI(object):
     def __init__(self, ft232h, cs=None, max_speed_hz=1000000, mode=0, bitorder=MSBFIRST):
         self._ft232h = ft232h
         # Initialize chip select pin if provided to output high.
         if cs is not None:
             ft232h.setup(cs, GPIO.OUT)
-            ft232h.set_high(cs)
         self._cs = cs
         # Initialize clock, mode, and bit order.
         self.set_clock_hz(max_speed_hz)
